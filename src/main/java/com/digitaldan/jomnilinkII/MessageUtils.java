@@ -1,27 +1,20 @@
-
+/**
+ * Copyright (c) 2009-2020 Dan Cunningham
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 package com.digitaldan.jomnilinkII;
 
-/**
-*  Copyright (C) 2009  Dan Cunningham
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation, version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-*/
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class MessageUtils {
-
-	private final static int[] table = { 0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241, 0xC601, 0x06C0,
+	private final static int[] table = {0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241, 0xC601, 0x06C0,
 			0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440, 0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81,
 			0x0E40, 0x0A00, 0xCAC1, 0xCB81, 0x0B40, 0xC901, 0x09C0, 0x0880, 0xC841, 0xD801, 0x18C0, 0x1980, 0xD941,
 			0x1B00, 0xDBC1, 0xDA81, 0x1A40, 0x1E00, 0xDEC1, 0xDF81, 0x1F40, 0xDD01, 0x1DC0, 0x1C80, 0xDC41, 0x1400,
@@ -40,7 +33,18 @@ public class MessageUtils {
 			0x95C1, 0x9481, 0x5440, 0x9C01, 0x5CC0, 0x5D80, 0x9D41, 0x5F00, 0x9FC1, 0x9E81, 0x5E40, 0x5A00, 0x9AC1,
 			0x9B81, 0x5B40, 0x9901, 0x59C0, 0x5880, 0x9841, 0x8801, 0x48C0, 0x4980, 0x8941, 0x4B00, 0x8BC1, 0x8A81,
 			0x4A40, 0x4E00, 0x8EC1, 0x8F81, 0x4F40, 0x8D01, 0x4DC0, 0x4C80, 0x8C41, 0x4400, 0x84C1, 0x8581, 0x4540,
-			0x8701, 0x47C0, 0x4680, 0x8641, 0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040, };
+			0x8701, 0x47C0, 0x4680, 0x8641, 0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040,};
+
+	// Multiple Omni temperatures (when rounded) map to the same rounded fahrenheit
+	// temp. The Omni operates in whole
+	// temperatures for fahrenheit. This creates a mapping of omni to (rounded)
+	// fahrenheight and then creates a reverse
+	// map that has the duplicates removed.
+	private final static Map<Integer, Float> OMNI_TO_FAHRENHEIT_MAP = IntStream.rangeClosed(0, 255).boxed()
+			.collect(Collectors.toMap(i -> i, i -> (float) Math.round(-40 + (i * .9))));
+
+	private final static Map<Float, Integer> FAHRENHEIT_TO_OMNI_MAP = OMNI_TO_FAHRENHEIT_MAP.entrySet().stream()
+			.collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey, (oldValue, newValue) -> newValue));
 
 	public static int crc16(byte[] bytes) {
 		int crc = 0x0000;
@@ -67,23 +71,23 @@ public class MessageUtils {
 		return buf.toString();
 	}
 
-	public static int omniToF(int temp) {
-		return (((((temp) * 9) + 4) / 10) - 40);
+	public static float omniToF(int temp) {
+		return OMNI_TO_FAHRENHEIT_MAP.get(temp);
 	}
 
-	public static int omniToC(int temp) {
-		return (((((temp) * 5) + 4) / 10) - 40);
+	public static float omniToC(int temp) {
+		return (temp) * 0.5f - 40;
 	}
 
-	public static int FtoOmni(int temp) {
-		return (((10 * (temp + 40)) + 4) / 9);
+	public static int FtoOmni(float temp) {
+		return FAHRENHEIT_TO_OMNI_MAP.get(Math.round(temp));
 	}
 
-	public static int CToOmni(int temp) {
-		return (((10 * ((temp) + 40)) + 4) / 5);
+	public static int CToOmni(float temp) {
+		return (int) ((temp + 40) * 2);
 	}
 
-	public static int omniToHumidity(int temp) {
+	public static float omniToHumidity(int temp) {
 		return omniToF(temp);
 	}
 }

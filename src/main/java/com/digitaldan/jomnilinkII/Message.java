@@ -1,22 +1,12 @@
-
 /**
-*  Copyright (C) 2009  Dan Cunningham
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation, version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-*/
-
+ * Copyright (c) 2009-2020 Dan Cunningham
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 package com.digitaldan.jomnilinkII;
 
 public interface Message {
@@ -25,8 +15,8 @@ public interface Message {
 	public static int MESG_TYPE_NEG_ACK = 0x02;
 	public static int MESG_TYPE_END_OF_DATA = 0x03;
 	public static int MESG_TYPE_CLEAR_NAMES = 0x0B;
-	public static int MESG_TYPE_DOWNLOAD_NAMES = 0x0C;
-	public static int MESG_TYPE_UPLOAD_NAMES = 0x0D;
+	public static int MESG_TYPE_WRITE_NAME = 0x0C;
+	public static int MESG_TYPE_READ_NAME = 0x0D;
 	public static int MESG_TYPE_NAME_DATA = 0x0E;
 	public static int MESG_TYPE_CLEAR_VOICES = 0x0F;
 	public static int MESG_TYPE_DOWNLOAD_VOICES = 0x10;
@@ -49,7 +39,7 @@ public interface Message {
 	public static int MESG_TYPE_OBJ_PROP = 0x21;
 	public static int MESG_TYPE_REQ_OBJ_STATUS = 0x22;
 	public static int MESG_TYPE_OBJ_STATUS = 0x23;
-	public static int MESG_TYPE_UPLOAD_EVENT_LOG = 0x24;
+	public static int MESG_TYPE_READ_EVENT_RECORD = 0x24;
 	public static int MESG_TYPE_EVENT_LOG_DATA = 0x25;
 	public static int MESG_TYPE_REQ_SEC_CODE_VALID = 0x26;
 	public static int MESG_TYPE_SEC_CODE_VALID = 0x27;

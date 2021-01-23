@@ -1,35 +1,59 @@
+/**
+ * Copyright (c) 2009-2020 Dan Cunningham
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 package com.digitaldan.jomnilinkII.MessageTypes.properties;
 
-/**
-*  Copyright (C) 2009  Dan Cunningham
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation, version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-*/
-
 import com.digitaldan.jomnilinkII.MessageTypes.ObjectProperties;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.AuxSensorStatus;
+
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
 
+/*
+ * AUXILIARY SENSOR PROPERTIES
+ *
+ *     Data 4               output status
+ *     Data 5               current temperature or humidity
+ *     Data 6               low setpoint
+ *     Data 7               high setpoint
+ *     Data 8               sensor type
+ *     Data 9-24            sensor name
+ *
+ * The temperatures are reported in the Omni temperature format.
+ *
+ * The available sensor types are as follows:
+ *
+ * ----------------------------------------------------
+ * | Sensor Type |            Description             |
+ * |-------------|------------------------------------|
+ * | 80          | Programmable Energy Saver Module   |
+ * |-------------|------------------------------------|
+ * | 81          | Outdoor Temperature                |
+ * |-------------|------------------------------------|
+ * | 82          | Temperature                        |
+ * |-------------|------------------------------------|
+ * | 83          | Temperature Alarm                  |
+ * |-------------|------------------------------------|
+ * | 84          | Humidity                           |
+ * |-------------|------------------------------------|
+ * | 85          | Extended Range Outdoor Temperature |
+ * |-------------|------------------------------------|
+ * | 86          | Extended Range Temperature         |
+ * |-------------|------------------------------------|
+ * | 87          | Extended Range Temperature Alarm   |
+ * ----------------------------------------------------
+ */
 @Value
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class AuxSensorProperties extends ObjectProperties {
-
 	public static final int SENSOR_TYPE_PROGRAMMABLE_ENERGY_SAVER_MODULE = 80;
 	public static final int SENSOR_TYPE_OUTDOOR_TEMPERATURE = 81;
 	public static final int SENSOR_TYPE_TEMPERATURE = 82;
@@ -55,5 +79,4 @@ public class AuxSensorProperties extends ObjectProperties {
 		this.highSetpoint = highSetpoint;
 		this.sensorType = sensorType;
 	}
-
 }

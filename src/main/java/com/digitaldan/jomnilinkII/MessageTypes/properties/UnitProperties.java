@@ -1,30 +1,70 @@
+/**
+ * Copyright (c) 2009-2020 Dan Cunningham
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
+ *
+ * SPDX-License-Identifier: EPL-2.0
+ */
 package com.digitaldan.jomnilinkII.MessageTypes.properties;
 
-/**
-*  Copyright (C) 2009  Dan Cunningham
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation, version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software
-* Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-*/
-
 import com.digitaldan.jomnilinkII.MessageTypes.ObjectProperties;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.UnitStatus;
+
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 import lombok.Value;
 
+/*
+ * ZONE PROPERTIES
+ *
+ *     Data 4               unit state
+ *     Data 5               unit time (MSB)
+ *     Data 6               unit time (LSB)
+ *     Data 7               unit type (0-255)
+ *     Data 8-20            unit name
+ *
+ * For description of unit status, see UNIT STATUS.
+ *
+ * The unit time is the number of seconds remaining for the last command.
+ *
+ * The available unit types are as follows:
+ *
+ * ----------------------------
+ * | Unit Type | Description  |
+ * |-----------|--------------|
+ * | 1         | Standard     |
+ * |-----------|--------------|
+ * | 2         | Extended     |
+ * |-----------|--------------|
+ * | 3         | Compose      |
+ * |-----------|--------------|
+ * | 4         | UPB          |
+ * |-----------|--------------|
+ * | 5         | HLC Room     |
+ * |-----------|--------------|
+ * | 6         | HLC Load     |
+ * |-----------|--------------|
+ * | 7         | Lumina Mode  |
+ * |-----------|--------------|
+ * | 8         | RadioRA      |
+ * |-----------|--------------|
+ * | 9         | CentraLite   |
+ * |-----------|--------------|
+ * | 10        | ViziaRF Room |
+ * |-----------|--------------|
+ * | 11        | ViziaRF Load |
+ * |-----------|--------------|
+ * | 12        | Flag         |
+ * |-----------|--------------|
+ * | 13        | Output       |
+ * |-----------|--------------|
+ * | 14        | Audio Zone   |
+ * |-----------|--------------|
+ * | 15        | Audio Source |
+ * ----------------------------
+ */
 @Value
 @EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
@@ -55,5 +95,4 @@ public class UnitProperties extends ObjectProperties {
 		this.time = time;
 		this.unitType = unitType;
 	}
-
 }

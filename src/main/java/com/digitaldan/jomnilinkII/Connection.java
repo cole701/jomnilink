@@ -1,22 +1,13 @@
-package com.digitaldan.jomnilinkII;
-
 /**
- *  Copyright (C) 2009  Dan Cunningham
+ * Copyright (c) 2009-2020 Dan Cunningham
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation, version 2
- * of the License, or (at your option) any later version.
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * SPDX-License-Identifier: EPL-2.0
  */
+package com.digitaldan.jomnilinkII;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -32,57 +23,14 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.digitaldan.jomnilinkII.MessageTypes.ActivateKeypadEmergency;
-import com.digitaldan.jomnilinkII.MessageTypes.CommandMessage;
-import com.digitaldan.jomnilinkII.MessageTypes.ConnectedSecurityCommand;
-import com.digitaldan.jomnilinkII.MessageTypes.ConnectedSecurityStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.DownloadNames;
-import com.digitaldan.jomnilinkII.MessageTypes.Notifications;
-import com.digitaldan.jomnilinkII.MessageTypes.ExtendedObjectStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.ObjectStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.ObjectTypeCapacities;
-import com.digitaldan.jomnilinkII.MessageTypes.OtherEventNotifications;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqAudioSourceStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqConnectedSecurityStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqExtendedObjectStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqObjectProperties;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqObjectStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqObjectTypeCapacities;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqSecurityCodeValidation;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqSystemFeatures;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqSystemFormats;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqSystemInformation;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqSystemStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqSystemTroubles;
-import com.digitaldan.jomnilinkII.MessageTypes.ReqZoneReadyStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.SecurityCodeValidation;
-import com.digitaldan.jomnilinkII.MessageTypes.SetTimeCommand;
-import com.digitaldan.jomnilinkII.MessageTypes.SystemFeatures;
-import com.digitaldan.jomnilinkII.MessageTypes.SystemFormats;
-import com.digitaldan.jomnilinkII.MessageTypes.SystemInformation;
-import com.digitaldan.jomnilinkII.MessageTypes.SystemStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.SystemTroubles;
-import com.digitaldan.jomnilinkII.MessageTypes.UploadEventRecord;
-import com.digitaldan.jomnilinkII.MessageTypes.UploadNames;
-import com.digitaldan.jomnilinkII.MessageTypes.ZoneReadyStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.AccessControlReaderLockStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.AccessControlReaderStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.AreaStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.AudioZoneStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.AuxSensorStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.ExpansionStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.ExtendedThermostatStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.MessageStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.Status;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.ThermostatStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.UnitStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.UserSettingStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.statuses.ZoneStatus;
-import com.digitaldan.jomnilinkII.MessageTypes.systemEvents.SystemEvent;
+import com.digitaldan.jomnilinkII.MessageTypes.*;
+import com.digitaldan.jomnilinkII.MessageTypes.statuses.*;
+import com.digitaldan.jomnilinkII.MessageTypes.systemevents.SystemEvent;
 
 public class Connection extends Thread {
 	private static final Logger logger = LoggerFactory.getLogger(Connection.class);
@@ -97,9 +45,9 @@ public class Connection extends Thread {
 	private static int PACKET_TYPE_OMNI_LINK_MESSAGE = 32;
 
 	public static int MAX_PACKET_SIZE = 255;
-	//Omni will kick you after 5 minutes of not receiveing anything
+	// Omni will kick you after 5 minutes of not receiveing anything
 	public static int OMNI_TO = 60 * 5 * 1000;
-	//Keep alive time, omni timeout minus one minute
+	// Keep alive time, omni timeout minus one minute
 	public static int PING_TO = OMNI_TO - (1000 * 60);
 
 	public boolean debug;
@@ -112,19 +60,18 @@ public class Connection extends Thread {
 	private int tx;
 	private int rx;
 	private Aes aes;
-	private OmniPacket response;
-	private Object readLock = new Object();
 	private Object writeLock = new Object();
 	private Exception lastException;
 	private final BlockingQueue<Message> notifications;
 	private final List<NotificationListener> notificationListeners;
 	private final List<DisconnectListener> disconnectListeners;
+	private final BlockingQueue<OmniPacket> responses;
 	private ConnectionWatchdog watchdog;
 
 	public Connection(String address, int port, String key) throws Exception, IOException, UnknownHostException {
 		ping = true;
 		notifications = new LinkedBlockingQueue<>();
-		response = null;
+		responses = new LinkedBlockingQueue<>();
 		lastException = null;
 		notificationListeners = new CopyOnWriteArrayList<NotificationListener>();
 		disconnectListeners = new CopyOnWriteArrayList<DisconnectListener>();
@@ -228,84 +175,58 @@ public class Connection extends Thread {
 		disconnectListeners.add(listener);
 	}
 
-	public void removeDisconnecListener(DisconnectListener listener) {
+	public void removeDisconnectListener(DisconnectListener listener) {
 		disconnectListeners.remove(listener);
 	}
 
 	public Message sendAndReceive(Message message)
 			throws IOException, OmniNotConnectedException, OmniUnknownMessageTypeException {
-
 		synchronized (writeLock) {
-			if (!connected) {
-				throw new OmniNotConnectedException(lastError());
-			}
-
-			OmniPacket ret;
-			sendBytesEncrypted(new OmniPacket(PACKET_TYPE_OMNI_LINK_MESSAGE, MessageFactory.toBytes(message)));
-			synchronized (readLock) {
-				//wait for notfiy when response comes in on thread
-				while (response == null && connected) {
-					try {
-						readLock.wait();
-					} catch (InterruptedException ignored) {
-					}
-				}
-				ret = response;
-				//no longer need this reference
-				response = null;
-				//notify reader it can continue;
-				readLock.notify();
-				//if an error occurs on our other thread it saves the exception
+			try {
 				if (!connected) {
 					throw new OmniNotConnectedException(lastError());
 				}
-			}
-			if (ret.type() != PACKET_TYPE_OMNI_LINK_MESSAGE) {
-				logger.debug("Invalid reply {}", bytesToString(ret.data()));
-				throw new IOException("RECEIEVD NON OMNI_LINK_MESG (" + (ret == null ? "NULL MESG" : ret.type()) + ")");
-			}
+				sendBytesEncrypted(new OmniPacket(PACKET_TYPE_OMNI_LINK_MESSAGE, MessageFactory.toBytes(message)));
+				OmniPacket omniPacket = responses.poll(30, TimeUnit.SECONDS);
+				if (omniPacket == null) {
+					// Throw exception if poll times out.
+					throw new IOException("Response not returned from Omni within 30 seconds");
+				}
+				// If an error occurs on our other thread it saves the exception
+				if (!connected) {
+					throw new OmniNotConnectedException(lastError());
+				}
 
-			//used to ping after a certain amount of time
-			lastTXMessageTime = System.currentTimeMillis();
-
-			writeLock.notifyAll();
-			return MessageFactory.fromBytes(ret.data());
+				// Used to ping after a certain amount of time
+				lastTXMessageTime = System.currentTimeMillis();
+				return MessageFactory.fromBytes(omniPacket.data());
+			} catch (InterruptedException ex) {
+				throw new IOException(ex);
+			}
 		}
 	}
 
 	@Override
 	public void run() {
-		OmniPacket ret;
 		while (connected) {
-			synchronized (readLock) {
-				try {
-					if ((ret = readBytesEncryptedExtended()).seq() == 0
-							&& ret.type() == PACKET_TYPE_OMNI_LINK_MESSAGE) {
-						notifications.put(MessageFactory.fromBytes(ret.data()));
-						logger.debug("run: NOTIFICATION: Added message with type {}", ret.type);
-					} else if (ret.type() == PACKET_TYPE_OMNI_LINK_MESSAGE) {
-						response = ret;
-						//notify calling request lock
-						readLock.notify();
-						//wait until the response is finished
-						try {
-							readLock.wait();
-						} catch (InterruptedException ignored) {
-						}
-					} else {
-						throw new IOException("Non omnilink message");
-					}
-				} catch (OmniUnknownMessageTypeException e) {
-					//ignore
-					logger.debug("run: Uknown Messgage type {}  Continuing", e.getUnknowMessageType());
-				} catch (Exception e) {
-					disconnect();
-					lastException = e;
-					//tell listeners about exception
-					notifyDisconnectHandlers(lastException);
-				} finally {
-					readLock.notifyAll();
+			try {
+				OmniPacket omniPacket = readBytesEncryptedExtended();
+				if ((omniPacket.seq() == 0 && omniPacket.type() == PACKET_TYPE_OMNI_LINK_MESSAGE)) {
+					notifications.put(MessageFactory.fromBytes(omniPacket.data()));
+					logger.debug("run: NOTIFICATION: Added message with type {}", omniPacket.type);
+				} else if (omniPacket.type() == PACKET_TYPE_OMNI_LINK_MESSAGE) {
+					responses.put(omniPacket);
+				} else {
+					throw new IOException("Non omnilink message");
 				}
+			} catch (OmniUnknownMessageTypeException e) {
+				// ignore
+				logger.debug("run: Uknown Messgage type {}  Continuing", e.getUnknowMessageType());
+			} catch (Exception e) {
+				disconnect();
+				lastException = e;
+				// tell listeners about exception
+				notifyDisconnectHandlers(lastException);
 			}
 		}
 		logger.debug("run: not connected, thread exiting");
@@ -313,39 +234,48 @@ public class Connection extends Thread {
 
 	/*
 	 * The following procedure is used to encrypt Omni-Link II application data:
-	1.   Process data in 128-bit (16-byte) blocks. If available data does not fill a 16-byte block, the data is
-	     left-justified and padded on the right with zeros to fill the block.
-	2.   Modify the first two bytes of the 16-byte encryption block by performing a logical XOR operation with the
-	     two bytes of the “message sequence number” in the HAI header (i.e., XOR the first byte of the encryption
-	     block with the MSB of the message sequence number, and XOR the second byte of the encryption block
-	     with the LSB of the message sequence number).
-	3.   Encrypt the 16-byte block using the AES encryption algorithm and the 128-bit session key that was
-	     negotiated when the client and controller established the secure connection.
-	4.   Process the next block of data until all data has been processed.
-	
 	 */
 	private void sendBytesEncrypted(OmniPacket p) throws IOException {
-		/* 1. */
+		/*
+		 * 1. Process data in 128-bit (16-byte) blocks. If available data does not fill
+		 * a 16-byte block, the data is left-justified and padded on the right with
+		 * zeros to fill the block.
+		 */
 		logger.trace("TX: {}", bytesToString(p.data()));
 		int txlength = (p.data().length + 15) & ~0xF;
 		byte[] paddedData = new byte[txlength];
-
 		System.arraycopy(p.data(), 0, paddedData, 0, p.data().length);
 		for (int i = p.data().length; i < txlength; i++) {
 			paddedData[i] = 0x00;
 		}
-		/* 2 */
+
+		/*
+		 * 2. Modify the first two bytes of the 16-byte encryption block by performing a
+		 * logical XOR operation with the two bytes of the “message sequence number” in
+		 * the HAI header (i.e., XOR the first byte of the encryption block with the MSB
+		 * of the message sequence number, and XOR the second byte of the encryption
+		 * block with the LSB of the message sequence number).
+		 */
 		for (int i = 0; i < (txlength / 16); i++) {
 			paddedData[0 + (16 * i)] ^= (tx >> 8) & 0xFF;
 			paddedData[1 + (16 * i)] ^= (tx) & 0xFF;
 		}
-		/*3*/
+
+		/*
+		 * 3. Encrypt the 16-byte block using the AES encryption algorithm and the
+		 * 128-bit session key that was negotiated when the client and controller
+		 * established the secure connection.
+		 */
 		byte[] encData;
 		try {
 			encData = aes.encrypt(paddedData);
 		} catch (Exception e) {
 			throw new IOException(e.getMessage());
 		}
+
+		/*
+		 * 4. Process the next block of data until all data has been processed.
+		 */
 		sendBytes(new OmniPacket(p.type(), encData));
 	}
 
@@ -380,15 +310,14 @@ public class Connection extends Thread {
 		}
 		logger.trace("Data Dec {}", bytesToString(decData));
 		return new OmniPacket(p.seq, p.type(), decData);
-
 	}
 
 	private OmniPacket readBytesEncryptedExtended() throws IOException, SocketTimeoutException {
-		//Notifications have thrown a bit of a curve ball, its possible to have
-		//two packets on the wire, but because the length of the packet
-		//is encrypted we have to peek into the first 16 bytes, decrypt those
-		//bytes and get the length, this makes the following code tricky and
-		//unattractive,
+		// Notifications have thrown a bit of a curve ball, its possible to have
+		// two packets on the wire, but because the length of the packet
+		// is encrypted we have to peek into the first 16 bytes, decrypt those
+		// bytes and get the length, this makes the following code tricky and
+		// unattractive,
 		DataInputStream dis = new DataInputStream(is);
 		logger.trace("Bytes available for reading: {}", is.available());
 		int seq = dis.readUnsignedShort();
@@ -402,40 +331,41 @@ public class Connection extends Thread {
 		decData[0] ^= (seq >> 8) & 0xFF;
 		decData[1] ^= (seq) & 0xFF;
 
-		//not all messages are omnilink
+		// not all messages are omnilink
 		if (type != PACKET_TYPE_OMNI_LINK_MESSAGE) {
 			logger.trace("NON OMNI LINK PACKET: {} RX Bytes: {}", type, bytesToString(decData));
 			return new OmniPacket(seq, type, decData);
 		}
 
-		//continue with omnilink decoding
+		// continue with omnilink decoding
 		int start = decData[0] & 0xFF;
 		int length = decData[1] & 0xFF;
 
 		if (start != Message.MESG_START) {
 			logger.debug("invalid start char ({})", start);
 		}
-		//throw new IOException("invalid start char (" + start + ")");
+		// throw new IOException("invalid start char (" + start + ")");
 		if (length < 0) {
 			throw new IOException("invalid message length (" + length + ")");
 		}
 
 		logger.trace("Omni message Length {}", length);
 
-		//length plus start and crc fields, round up to next 16, minus the bytes we have already read
+		// length plus start and crc fields, round up to next 16, minus the bytes we
+		// have already read
 		int readLength = ((((length + 3) / 16) + 1) * 16) - 16;
 
 		logger.trace("Additional bytes to read {}", readLength);
 
 		if (readLength > 0) {
-			//buffer for existing 16 bytes of data plus any on the wire
+			// buffer for existing 16 bytes of data plus any on the wire
 			byte[] decData2 = new byte[decData.length + readLength];
 			encData = new byte[readLength];
-			//copy the data we already have from decData to decData2
+			// copy the data we already have from decData to decData2
 			System.arraycopy(decData, 0, decData2, 0, decData.length);
-			//read the rest
+			// read the rest
 			dis.readFully(encData);
-			//add decrypted data to the buffer
+			// add decrypted data to the buffer
 			aes.decrypt(encData, 0, readLength, decData2, decData.length);
 			/* XOR data */
 			for (int i = 1; i < (decData2.length / 16); i++) {
@@ -448,7 +378,6 @@ public class Connection extends Thread {
 		logger.trace("RX: {} Data still available after read {}", bytesToString(decData), is.available());
 
 		return new OmniPacket(seq, type, decData);
-
 	}
 
 	private OmniPacket readBytes() throws IOException, SocketTimeoutException {
@@ -532,14 +461,9 @@ public class Connection extends Thread {
 	public Message reqObjectProperties(int objectType, int objectNum, int direction, int filter1, int filter2,
 			int filter3) throws IOException, OmniNotConnectedException, OmniInvalidResponseException,
 			OmniUnknownMessageTypeException {
-		ReqObjectProperties reqObjectProperties = ReqObjectProperties.builder()
-													.objectType(objectType)
-													.objectNumber(objectNum)
-													.direction(direction)
-													.filter1(filter1)
-													.filter2(filter2)
-													.filter3(filter3)
-													.build();
+		ReqObjectProperties reqObjectProperties = ReqObjectProperties.builder().objectType(objectType)
+				.objectNumber(objectNum).direction(direction).filter1(filter1).filter2(filter2).filter3(filter3)
+				.build();
 		Message msg = sendAndReceive(reqObjectProperties);
 		if (msg.getMessageType() != Message.MESG_TYPE_OBJ_PROP
 				&& msg.getMessageType() != Message.MESG_TYPE_END_OF_DATA) {
@@ -564,56 +488,96 @@ public class Connection extends Thread {
 			OmniUnknownMessageTypeException {
 		Status[] s = null;
 		switch (objectType) {
-		case Message.OBJ_TYPE_AREA: {
-			s = new AreaStatus[endObject - startObject + 1];
-		}
-			break;
-		case Message.OBJ_TYPE_AUDIO_ZONE: {
-			s = new AudioZoneStatus[endObject - startObject + 1];
-		}
-			break;
-		case Message.OBJ_TYPE_AUX_SENSOR: {
-			s = new AuxSensorStatus[endObject - startObject + 1];
-		}
-			break;
-		case Message.OBJ_TYPE_EXP: {
-			s = new ExpansionStatus[endObject - startObject + 1];
-		}
-			break;
-		case Message.OBJ_TYPE_MESG: {
-			s = new MessageStatus[endObject - startObject + 1];
-		}
-			break;
-		case Message.OBJ_TYPE_THERMO: {
-			if (extended) {
-				s = new ExtendedThermostatStatus[endObject - startObject + 1];
-			} else {
-				s = new ThermostatStatus[endObject - startObject + 1];
+			case Message.OBJ_TYPE_ZONE : {
+				if (extended) {
+					s = new ExtendedZoneStatus[endObject - startObject + 1];
+				} else {
+					s = new ZoneStatus[endObject - startObject + 1];
+				}
 			}
-		}
-			break;
-		case Message.OBJ_TYPE_UNIT: {
-			s = new UnitStatus[endObject - startObject + 1];
-		}
-			break;
-		case Message.OBJ_TYPE_ZONE: {
-			s = new ZoneStatus[endObject - startObject + 1];
-		}
-			break;
-		case Message.OBJ_TYPE_USER_SETTING: {
-			s = new UserSettingStatus[endObject - startObject + 1];
-		}
-			break;
-		case Message.OBJ_TYPE_CONTROL_READER: {
-			s = new AccessControlReaderStatus[endObject - startObject + 1];
-		}
-			break;
-		case Message.OBJ_TYPE_CONTROL_LOCK: {
-			s = new AccessControlReaderLockStatus[endObject - startObject + 1];
-		}
-			break;
-		default:
-			break;
+				break;
+			case Message.OBJ_TYPE_UNIT : {
+				if (extended) {
+					s = new ExtendedUnitStatus[endObject - startObject + 1];
+				} else {
+					s = new UnitStatus[endObject - startObject + 1];
+				}
+			}
+				break;
+			case Message.OBJ_TYPE_AREA : {
+				if (extended) {
+					s = new ExtendedAreaStatus[endObject - startObject + 1];
+				} else {
+					s = new AreaStatus[endObject - startObject + 1];
+				}
+			}
+				break;
+			case Message.OBJ_TYPE_THERMO : {
+				if (extended) {
+					s = new ExtendedThermostatStatus[endObject - startObject + 1];
+				} else {
+					s = new ThermostatStatus[endObject - startObject + 1];
+				}
+			}
+				break;
+			case Message.OBJ_TYPE_MESG : {
+				if (extended) {
+					s = new ExtendedMessageStatus[endObject - startObject + 1];
+				} else {
+					s = new MessageStatus[endObject - startObject + 1];
+				}
+			}
+				break;
+			case Message.OBJ_TYPE_AUX_SENSOR : {
+				if (extended) {
+					s = new ExtendedAuxSensorStatus[endObject - startObject + 1];
+				} else {
+					s = new AuxSensorStatus[endObject - startObject + 1];
+				}
+			}
+				break;
+			case Message.OBJ_TYPE_AUDIO_ZONE : {
+				if (extended) {
+					s = new ExtendedAudioZoneStatus[endObject - startObject + 1];
+				} else {
+					s = new AudioZoneStatus[endObject - startObject + 1];
+				}
+			}
+				break;
+			case Message.OBJ_TYPE_EXP : {
+				if (extended) {
+					s = new ExtendedExpansionStatus[endObject - startObject + 1];
+				} else {
+					s = new ExpansionStatus[endObject - startObject + 1];
+				}
+			}
+				break;
+			case Message.OBJ_TYPE_USER_SETTING : {
+				if (extended) {
+					s = new ExtendedUserSettingStatus[endObject - startObject + 1];
+				} else {
+					s = new UserSettingStatus[endObject - startObject + 1];
+				}
+			}
+				break;
+			case Message.OBJ_TYPE_CONTROL_READER : {
+				if (extended) {
+					s = new ExtendedAccessControlReaderStatus[endObject - startObject + 1];
+				} else {
+					s = new AccessControlReaderStatus[endObject - startObject + 1];
+				}
+			}
+				break;
+			case Message.OBJ_TYPE_CONTROL_LOCK : {
+				if (extended) {
+					s = new ExtendedAccessControlReaderLockStatus[endObject - startObject + 1];
+				} else {
+					s = new AccessControlReaderLockStatus[endObject - startObject + 1];
+				}
+			}
+				break;
+			default :
+				break;
 		}
 		int current = startObject;
 		int next = current;
@@ -625,9 +589,11 @@ public class Connection extends Thread {
 
 			Message msg = null;
 			if (extended) {
-				msg = sendAndReceive(ReqExtendedObjectStatus.builder().objectType(objectType).startObject(current).endObject(next).build());
+				msg = sendAndReceive(ReqExtendedObjectStatus.builder().objectType(objectType).startObject(current)
+						.endObject(next).build());
 			} else {
-				msg = sendAndReceive(ReqObjectStatus.builder().objectType(objectType).startObject(current).endObject(next).build());
+				msg = sendAndReceive(
+						ReqObjectStatus.builder().objectType(objectType).startObject(current).endObject(next).build());
 			}
 
 			if (msg.getMessageType() != Message.MESG_TYPE_OBJ_STATUS
@@ -672,9 +638,9 @@ public class Connection extends Thread {
 		return (ConnectedSecurityStatus) msg;
 	}
 
-	public Message uploadEventLogData(int number, int direction) throws IOException, OmniNotConnectedException,
+	public Message readEventRecord(int number, int direction) throws IOException, OmniNotConnectedException,
 			OmniInvalidResponseException, OmniUnknownMessageTypeException {
-		Message msg = sendAndReceive(UploadEventRecord.builder().eventNumber(number).direction(direction).build());
+		Message msg = sendAndReceive(ReadEventRecord.builder().eventNumber(number).direction(direction).build());
 		if (msg.getMessageType() != Message.MESG_TYPE_EVENT_LOG_DATA
 				&& msg.getMessageType() != Message.MESG_TYPE_END_OF_DATA) {
 			throw new OmniInvalidResponseException(msg);
@@ -682,9 +648,9 @@ public class Connection extends Thread {
 		return msg;
 	}
 
-	public Message uploadNames(int objectType, int objectNumber) throws IOException, OmniNotConnectedException,
+	public Message readName(int objectType, int objectNumber) throws IOException, OmniNotConnectedException,
 			OmniInvalidResponseException, OmniUnknownMessageTypeException {
-		Message msg = sendAndReceive(UploadNames.builder().objectType(objectType).objectNumber(objectNumber).build());
+		Message msg = sendAndReceive(ReadName.builder().objectType(objectType).objectNumber(objectNumber).build());
 		if (msg.getMessageType() != Message.MESG_TYPE_NAME_DATA
 				&& msg.getMessageType() != Message.MESG_TYPE_END_OF_DATA) {
 			throw new OmniInvalidResponseException(msg);
@@ -692,9 +658,10 @@ public class Connection extends Thread {
 		return msg;
 	}
 
-	public void downloadNames(int objectType, int objectNumber, String name) throws IOException,
-			OmniNotConnectedException, OmniInvalidResponseException, OmniUnknownMessageTypeException {
-		Message msg = sendAndReceive(DownloadNames.builder().objectType(objectType).objectNumber(objectNumber).name(name).build());
+	public void writeName(int objectType, int objectNumber, String name) throws IOException, OmniNotConnectedException,
+			OmniInvalidResponseException, OmniUnknownMessageTypeException {
+		Message msg = sendAndReceive(
+				WriteName.builder().objectType(objectType).objectNumber(objectNumber).name(name).build());
 		if (msg.getMessageType() != Message.MESG_TYPE_ACK) {
 			throw new OmniInvalidResponseException(msg);
 		}
@@ -703,16 +670,9 @@ public class Connection extends Thread {
 	public void connectedSecurityCommand(int command, int partition, int digit1, int digit2, int digit3, int digit4,
 			int digit5, int digit6) throws IOException, OmniNotConnectedException, OmniInvalidResponseException,
 			OmniUnknownMessageTypeException {
-		ConnectedSecurityCommand connectedSecurityCommand = ConnectedSecurityCommand.builder()
-															.command(command)
-															.partition(partition)
-															.digit1(digit1)
-															.digit2(digit2)
-                											.digit3(digit3)
-															.digit4(digit4)
-															.digit5(digit5)
-															.digit6(digit6)
-															.build();
+		ConnectedSecurityCommand connectedSecurityCommand = ConnectedSecurityCommand.builder().command(command)
+				.partition(partition).digit1(digit1).digit2(digit2).digit3(digit3).digit4(digit4).digit5(digit5)
+				.digit6(digit6).build();
 
 		Message msg = sendAndReceive(connectedSecurityCommand);
 		if (msg.getMessageType() != Message.MESG_TYPE_ACK) {
@@ -731,15 +691,8 @@ public class Connection extends Thread {
 	public void setTimeCommand(int year, int month, int day, int dayOfWeek, int hour, int minute,
 			boolean daylightSavings) throws IOException, OmniNotConnectedException, OmniInvalidResponseException,
 			OmniUnknownMessageTypeException {
-		Message msg = sendAndReceive(SetTimeCommand.builder()
-										.year(year)
-										.month(month)
-										.day(day)
-										.dayOfWeek(dayOfWeek)
-										.hour(hour)
-										.minute(minute)
-										.daylightSavings(daylightSavings)
-										.build());
+		Message msg = sendAndReceive(SetTimeCommand.builder().year(year).month(month).day(day).dayOfWeek(dayOfWeek)
+				.hour(hour).minute(minute).daylightSavings(daylightSavings).build());
 		if (msg.getMessageType() != Message.MESG_TYPE_ACK) {
 			throw new OmniInvalidResponseException(msg);
 		}
@@ -756,13 +709,8 @@ public class Connection extends Thread {
 	public SecurityCodeValidation reqSecurityCodeValidation(int area, int digit1, int digit2, int digit3, int digit4)
 			throws IOException, OmniNotConnectedException, OmniInvalidResponseException,
 			OmniUnknownMessageTypeException {
-		Message msg = sendAndReceive(ReqSecurityCodeValidation.builder()
-										.area(area)
-										.digit1(digit1)
-										.digit2(digit2)
-										.digit3(digit3)
-										.digit4(digit4)
-										.build());
+		Message msg = sendAndReceive(ReqSecurityCodeValidation.builder().area(area).digit1(digit1).digit2(digit2)
+				.digit3(digit3).digit4(digit4).build());
 		if (msg.getMessageType() != Message.MESG_TYPE_SEC_CODE_VALID) {
 			throw new OmniInvalidResponseException(msg);
 		}
@@ -833,8 +781,7 @@ public class Connection extends Thread {
 					try {
 						reqSystemStatus();
 					} catch (Exception ignored) {
-					}
-					;
+					} ;
 				}
 				try {
 					sleep(1000);
@@ -886,7 +833,7 @@ public class Connection extends Thread {
 						}
 					}
 				} catch (Throwable t) {
-					//Catch all exceptions to prevent notification thread from dying.
+					// Catch all exceptions to prevent notification thread from dying.
 					logger.error("Notification Handler Caught Exception", t);
 					t.printStackTrace();
 				}
